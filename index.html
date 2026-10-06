@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laboratorium Izin Kamera</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#667386;--line:#dce3ec;--blue:#1457d9;--red:#d93025;--green:#0f9d58}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);padding:18px}.wrap{max-width:680px;margin:0 auto}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;margin:14px 0}.hero{background:#173f8f;color:#fff}.hero h1{margin:0 0 8px}.hero p{margin:0;line-height:1.5;opacity:.94}.notice{background:#fff6df;border-left:5px solid #f0a000;border-radius:12px;padding:14px;line-height:1.5}.videoWrap{background:#10141b;aspect-ratio:16/10;border-radius:18px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;text-align:center;padding:16px}video{width:100%;height:100%;object-fit:cover;display:none}button{width:100%;border:0;border-radius:13px;padding:14px 16px;font-size:16px;font-weight:800;cursor:pointer;margin-top:12px;background:var(--blue);color:#fff;min-height:48px}button:disabled{opacity:.6}.muted{color:var(--muted);font-size:14px;line-height:1.5}.status{font-weight:800;margin-top:14px}.danger{color:var(--red)}.good{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card hero"><h1>📷 Laboratorium Izin Kamera</h1><p>Ini hanya simulasi pembelajaran. Kamera aktif hanya jika kamu sendiri menekan tombol dan memilih <strong>Izinkan</strong> pada dialog browser.</p></section>
+  <section class="card">
+    <div class="notice"><strong>Penting:</strong> halaman ini tidak mengambil foto, tidak merekam video, tidak mengaktifkan mikrofon, dan tidak mengunggah gambar apa pun. Jika izin diberikan, live preview berjalan sekitar 3 detik lalu kamera dihentikan.</div>
+    <div class="videoWrap" style="margin-top:14px"><div id="placeholder">Kamera belum diaktifkan.<br><br>Perhatikan apa yang diminta sebuah website sebelum memberi izin.</div><video id="video" autoplay playsinline muted></video></div>
+    <button id="requestBtn">Minta akses kamera</button>
+    <div id="status" class="status">Belum ada keputusan.</div>
+    <p class="muted">Browser akan menampilkan dialog izin resmi. Pilihanmu akan dicatat sebagai <strong>Izinkan</strong> atau <strong>Tolak</strong>, bukan foto/video.</p>
+  </section>
+</div>
+<script>
+(() => {
+  const qs=new URLSearchParams(location.search); const token=qs.get('token')||''; const ret=qs.get('return')||'';
+  const btn=document.getElementById('requestBtn'), video=document.getElementById('video'), placeholder=document.getElementById('placeholder'), status=document.getElementById('status');
+  let finished=false;
+  function go(result){
+    if(finished)return; finished=true;
+    if(!ret||!token){status.textContent='Parameter simulasi tidak lengkap.';status.className='status danger';return;}
+    const sep=ret.includes('?')?'&':'?';
+    setTimeout(()=>{location.href=ret+sep+'mode=cameraReturn&token='+encodeURIComponent(token)+'&result='+encodeURIComponent(result);},900);
+  }
+  btn.addEventListener('click',async()=>{
+    btn.disabled=true; btn.textContent='Menunggu izin browser…';
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){status.textContent='Browser ini tidak mendukung akses kamera.';status.className='status danger';go('unsupported');return;}
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+      video.srcObject=stream; video.style.display='block'; placeholder.style.display='none'; status.textContent='Kamera diizinkan. Live preview berhenti otomatis dalam 3 detik.'; status.className='status danger';
+      setTimeout(()=>{
+        stream.getTracks().forEach(t=>t.stop()); video.srcObject=null; video.style.display='none'; placeholder.style.display='block'; placeholder.textContent='Kamera sudah dihentikan. Tidak ada foto/video yang disimpan.'; go('granted');
+      },3000);
+    }catch(err){
+      const denied=err && (err.name==='NotAllowedError'||err.name==='SecurityError');
+      status.textContent=denied?'Akses kamera ditolak.':'Kamera tidak dapat diakses pada perangkat ini.'; status.className='status good'; go(denied?'denied':'error');
+    }
+  });
+})();
+</script>
+</body>
+</html>
